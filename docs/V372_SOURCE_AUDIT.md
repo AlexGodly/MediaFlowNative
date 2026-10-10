@@ -1,0 +1,306 @@
+# MediaFlow website v372 — Native parity audit
+
+This is an initial source inventory, **not** proof of full feature parity. It enumerates the 272 JavaScript modules in the supplied web baseline. Native implementations must be behaviorally verified, not just screen-matched.
+
+## Functional families
+
+| Website family | Web modules | Native v3 state |
+|---|---:|---|
+| `core` | 8 | Core snapshot adapter, many UI rules missing |
+| `pages` | 57 | Main pages partial |
+| `features/logging` | 6 | Local drafts only, official commits missing |
+| `features/xp` | 3 | Persisted XP audit only, engine missing |
+| `features/rewatch` | 3 | Read-only History details |
+| `features/backup` | 6 | Local snapshot export only |
+| `features/import-export` | 3 | Not ported |
+| `features/scheduler` | 4 | Not ported |
+| `features/themes` | 10 | Partial accent support |
+| `services/cloud-sync` | 16 | Partial CAS protected edit upload |
+| `components` | 135 | Most feature modules unported |
+
+## Acceptance gates
+
+- Exact website `snapshot`/merge, session, XP, streak and tombstone fixtures ported and tested against Dart.
+- Every page, subview, setting, action and background workflow mapped to a working Flutter equivalent (or necessary native replacement).
+- Web and native concurrent writes validated on test accounts and conflict retries validated.
+- 30k–50k Library performance measured, not simply asserted.
+- Android and Windows signed builds with stable identifiers; iOS signed and verified on Xcode.
+
+## Remaining high-risk differences
+
+Official logging; XP/streak and achievements; full Library CRUD; importer compatibility; backup restoration; advanced category queues; all theme color modes; full Settings actions; offline queue reconciliation; mobile platform file and permission behaviors.
+
+## Website JavaScript source manifest
+
+- `components/157-v225-global-button-icons.js`
+- `components/158-v226-semantic-icons-dropdowns.js`
+- `components/161-v227-ui-icon-corrections.js`
+- `components/162-v228-library-priority-dynamic-row.js`
+- `components/163-v229-library-choice-modals.js`
+- `components/164-v230-choice-filter-layout.js`
+- `components/165-v231-settings-library-mode-layout-inheritance.js`
+- `components/166-v232-library-performance-persistence-details.js`
+- `components/167-v233-dynamic-settings-title-details-cover.js`
+- `components/168-v234-dashboard-input-polish.js`
+- `components/169-v235-missing-cover-live-validation.js`
+- `components/170-v236-searchable-category-filter.js`
+- `components/171-v237-cross-surface-category-filters.js`
+- `components/172-v238-status-logging-responsive-device-mode.js`
+- `components/173-v239-batch-log-editor-responsive-cleanup.js`
+- `components/174-v240-edit-title-cover-profile-audit.js`
+- `components/175-v241-editor-history-performance.js`
+- `components/176-v242-logging-history-performance-polish.js`
+- `components/177-v243-logging-cover-batch-filter-polish.js`
+- `components/178-v244-pwa.js`
+- `components/179-v245-icon-branding.js`
+- `components/180-v246-pwa-mobile-install-responsive.js`
+- `components/181-v247-pwa-reliability-diagnostics.js`
+- `components/182-v248-settings-update-install-polish.js`
+- `components/183-v249-pwa-update-scope-correction.js`
+- `components/184-v250-about-update-data-integrity.js`
+- `components/185-v251-library-covers-titles-display.js`
+- `components/186-v252-seasons-view.js`
+- `components/187-v253-seasons-history-logging-polish.js`
+- `components/188-v254-library-cover-overlays.js`
+- `components/189-v255-cover-status-colors.js`
+- `components/190-v256-cover-sizing-runtime-calculator.js`
+- `components/191-v257-dashboard-cloud-settings-mobile-pwa-update-backup.js`
+- `components/192-v258-category-icon-library-persistence-audit.js`
+- `components/193-v259-category-icon-showcase-polish.js`
+- `components/194-v260-react-redesign-history.js`
+- `components/195-v261-library-history-balance-polish.js`
+- `components/196-v262-library-restore.js`
+- `components/197-v263-library-filter-click-fix.js`
+- `components/198-v264-library-balance-order-settings-polish.js`
+- `components/199-v265-ux-stability-library-balance-sidebar.js`
+- `components/200-v266-title-library-settings-nav-fixes.js`
+- `components/201-v267-sync-order-balance-dynamic-cover-reliability.js`
+- `components/202-v268-dashboard-balance-initial-load.js`
+- `components/203-v269-consumption-history-redesign.js`
+- `components/204-v270-history-performance-app-optimization.js`
+- `components/205-v271-history-ui-logs-cover-settings-data-audit.js`
+- `components/206-v272-logs-covers-edit-title-fix.js`
+- `components/207-v273-drag-responsive-data-audit.js`
+- `components/208-v274-collections-library-rating-order-layout.js`
+- `components/209-v275-order-edge-resize-collection-add-back.js`
+- `components/210-v276-collections-personal-order-polish.js`
+- `components/211-v277-responsive-navigation-fix.js`
+- `components/212-v278-responsive-bottom-nav-visual-parity.js`
+- `components/213-v279-collections-progress-background-performance.js`
+- `components/214-v280-collection-cover-progress-selection-hero.js`
+- `components/215-v281-collections-responsive-cloud-library-search.js`
+- `components/216-v282-category-collections-stability.js`
+- `components/217-v283-category-modal-sidebar-collection-card-fixes.js`
+- `components/218-v284-account-compact-progress-fix.js`
+- `components/219-v285-dashboard-logging-resume.js`
+- `components/220-v286-category-persistence-runtime-cache.js`
+- `components/221-v287-personal-order-collection-queues.js`
+- `components/222-v288-personal-order-queue-views.js`
+- `components/223-v289-personal-order-editor-choice-parity.js`
+- `components/224-v290-category-selector-ui-visibility.js`
+- `components/225-v291-searchable-category-picker.js`
+- `components/226-v295-default-categories-responsive-data-audit.js`
+- `components/227-v296-category-recovery-confirm-responsive-data-audit.js`
+- `components/228-v297-premium-auth-experience.js`
+- `components/229-v298-auth-layout-repair.js`
+- `components/230-v301-rerolls-history-fix.js`
+- `components/231-v331-per-title-logging-timestamps.js`
+- `components/232-v334-dashboard-xp-active-time.js`
+- `components/233-v335-statistics-xp-calculator-polish.js`
+- `components/234-v336-dialogs-active-time-analytics.js`
+- `components/235-v337-active-time-dual-milestones.js`
+- `components/236-v339-data-cloud-transfer-update-audit.js`
+- `components/237-v340-history-navigation-recent-titles.js`
+- `components/238-v341-history-tab-pagination-performance.js`
+- `components/239-v342-recent-view-ui-polish.js`
+- `components/240-v343-recent-view-spacing-daypart-icons.js`
+- `components/241-v344-recent-view-remove-title-and-daypart-icons.js`
+- `components/242-v345-personal-order-list-tab-queues.js`
+- `components/243-v346-queue-tab-icons-controls.js`
+- `components/244-v347-collections-personal-order-separation.js`
+- `components/245-v348-universal-streak-action-xp.js`
+- `components/246-v348-xp-history-cloud-transfer-audit.js`
+- `components/247-v349-history-first-open-scroll-reset.js`
+- `components/248-v350-mobile-adaptive-ui.js`
+- `components/249-v351-mobile-regression-repairs.js`
+- `components/250-v352-collection-add-picker-views.js`
+- `components/251-v353-mobile-collection-picker-tools.js`
+- `components/252-v354-personal-order-quick-workspace.js`
+- `components/253-v355-personal-order-ui-refinement.js`
+- `components/254-v356-personal-order-dialog-browse-layout.js`
+- `components/255-v357-personal-order-dialogs-tabs-icons.js`
+- `components/256-v358-personal-order-rebuild.js`
+- `components/257-v359-picker-pagination-category-tabs.js`
+- `components/258-v360-adaptive-personal-order-pickers.js`
+- `components/259-v361-collection-picker-views-sizing.js`
+- `components/260-v362-collection-picker-mobile-workspace.js`
+- `components/261-v363-personal-order-workspace-performance.js`
+- `components/262-v364-personal-order-cover-queue-parity.js`
+- `components/263-v365-settings-center.js`
+- `components/264-v366-settings-registration.js`
+- `components/265-v367-settings-first-paint.js`
+- `components/266-v368-performance-stability.js`
+- `components/267-v369-itemized-logging.js`
+- `components/268-v370-logging-ui.js`
+- `components/269-v371-logging-polish-stability.js`
+- `components/270-v372-logging-premium-settings-collections.js`
+- `components/batch-toolbar/048-v143-library-bulk-action-confirmations.js`
+- `components/batch-toolbar/124-v190-shared-normal-dynamic-library-batch-toolbar.js`
+- `components/category/005-v74-persistent-category-ordering.js`
+- `components/category/049-v144-reusable-category-icon-color-palettes.js`
+- `components/category/073-v171-category-recovery-default-identity.js`
+- `components/category/135-v197-category-clear-controls.js`
+- `components/category/137-category-editor-missing-default-cover-url.js`
+- `components/cover/034-v50-cover-forward-ui-simkl-export.js`
+- `components/cover/047-v142-order-import-export-clear-recovery.js`
+- `components/cover/061-v158-complete-import-metadata-safe-cover-repair.js`
+- `components/cover/065-v162-user-controlled-adaptive-cover-collections.js`
+- `components/cover/109-unlimited-per-surface-cover-size-manager.js`
+- `components/cover/126-v191-clean-covers-restorable-deleted-titles.js`
+- `components/cover/136-v200-category-default-missing-covers.js`
+- `components/cover/138-v144-s-save-handler-is-reproduced-with-the.js`
+- `components/modal/020-modals.js`
+- `components/navigation/022-desktop-sidebar-resizing.js`
+- `components/navigation/064-v161-about-custom-navigation-data-audit.js`
+- `components/navigation/154-v224-page-names.js`
+- `components/pagination/046-v141-fast-order-pagination-active-page-fix.js`
+- `components/pagination/075-order-edit-buttons-optional-ordered-title-pagination.js`
+- `components/pagination/081-ordered-title-pagination-amount.js`
+- `components/title-details/113-global-title-details-popup.js`
+- `core/app/021-app-public-actions-bound-to-window.js`
+- `core/constants/001-constants.js`
+- `core/rendering/010-render-shell.js`
+- `core/rendering/035-render-loop-init.js`
+- `core/runtime/149-v224-sort-foundation.js`
+- `core/runtime/998-runtime-extension-foundation-v219.js`
+- `core/runtime/999-close-app.js`
+- `core/state/002-state.js`
+- `features/backup/053-v148-complete-data-backup-audit-full-restore.js`
+- `features/backup/056-v152-automatic-backup-full-backup.js`
+- `features/backup/090-full-backup-automatic-backup.js`
+- `features/backup/097-full-backup-automatic-backup-2.js`
+- `features/backup/106-full-backup-automatic-backup-3.js`
+- `features/backup/134-v196-settings-presets.js`
+- `features/import-export/026-v37-simkl-json-bulk-library-tools-activity-undo.js`
+- `features/import-export/071-v169-advanced-import-export-media-services.js`
+- `features/import-export/072-v170-advanced-import-type-exclusions.js`
+- `features/logging/000-v89-functional-logging-filters-with-direct-event-binding.js`
+- `features/logging/008-session-flow.js`
+- `features/logging/098-v179-dual-logging-modes.js`
+- `features/logging/099-normal-logging-ui.js`
+- `features/logging/108-default-logging-mode.js`
+- `features/logging/153-v224-dashboard-logging-sorting.js`
+- `features/rewatch/027-v81-repeat-consumption-rewatch-reread.js`
+- `features/rewatch/028-v82-per-title-rewatch-reread-visibility.js`
+- `features/rewatch/038-v121-rewatch-reread-xp.js`
+- `features/scheduler/007-scheduler.js`
+- `features/scheduler/068-v166-automatic-seasonal-fresh-episode-detection.js`
+- `features/scheduler/069-v167-editable-system-respect-xp.js`
+- `features/scheduler/104-v180-system-respect-xp.js`
+- `features/themes/029-v63-original-50-theme-collection.js`
+- `features/themes/030-v133-14-additional-built-in-themes.js`
+- `features/themes/031-v55-platform-themes.js`
+- `features/themes/036-v101-full-style-themes-runtime-scope-fix.js`
+- `features/themes/050-v145-dynamic-cover-based-theme-accent.js`
+- `features/themes/051-v146-dynamic-full-cover-theme.js`
+- `features/themes/063-v160-reliable-dynamic-cover-theme.js`
+- `features/themes/066-v163-dynamic-cover-theme-rotation-control.js`
+- `features/themes/067-v164-simkl-full-style-theme.js`
+- `features/themes/077-themes-3-new-adaptive-cover-collections.js`
+- `features/xp/037-v120-completion-xp-progression-integrity.js`
+- `features/xp/054-v149-day-streak-xp-multiplier.js`
+- `features/xp/055-v150-v149-streak-xp-performance-fix.js`
+- `legacy/025-v40-multi-service-exchange-hub-custom-import-confirmation.js`
+- `legacy/060-v157-direct-numeric-ordering.js`
+- `legacy/074-v172-unified-media-services-import-interface.js`
+- `legacy/080-v175.js`
+- `legacy/082-dedicated-order-export-import.js`
+- `legacy/088-media-service-exchange-export.js`
+- `legacy/089-sync-verification.js`
+- `legacy/093-v178-editable-rich-imported-metadata.js`
+- `legacy/095-protect-manually-edited-fields-from-future-imports.js`
+- `legacy/102-v180.js`
+- `legacy/105-historical-merge-cache-audit-compatibility.js`
+- `legacy/107-v181.js`
+- `legacy/117-v183.js`
+- `legacy/119-v186.js`
+- `legacy/120-v188.js`
+- `legacy/125-v190-is-a-rendering-workflow-parity-release-it.js`
+- `legacy/127-persistent-deleted-title-snapshots.js`
+- `legacy/129-v192.js`
+- `legacy/133-v194.js`
+- `legacy/post-app/141b-v201-post-app-legacy.js`
+- `pages/batch-log/014-view-batch-log-v61.js`
+- `pages/batch-log/083-batch-log-full-library-browser-filters.js`
+- `pages/batch-log/100-batch-log-state-ui.js`
+- `pages/batch-log/151-v224-batch-log-sorting.js`
+- `pages/dashboard/011-view-dashboard.js`
+- `pages/dashboard/039-v123-dashboard-rating-queue-rating-xp.js`
+- `pages/dashboard/042-v136-on-this-day-lifecycle-events.js`
+- `pages/dashboard/062-v159-rotating-on-this-day-adaptive-cover-themes.js`
+- `pages/dashboard/079-v174-edit-recommended-title-from-dashboard.js`
+- `pages/dashboard/103-dashboard-controls-beside-the-recommended-title.js`
+- `pages/dashboard/130-missing-covers-queue.js`
+- `pages/dashboard/142-v76-on-this-day-whole-day-activity.js`
+- `pages/dashboard/147-v222-dashboard-rendering-stability.js`
+- `pages/dashboard/148-v223-on-this-day-dashboard-visibility.js`
+- `pages/dashboard/155-v224-recommendation-actions.js`
+- `pages/history/015-view-history.js`
+- `pages/history/043-v137-automatic-start-date-from-genuine-history.js`
+- `pages/library/012-v63-large-library-performance-engine.js`
+- `pages/library/013-v70-expanded-library-display-ordering.js`
+- `pages/library/059-v156-fast-order-large-library-performance-engine.js`
+- `pages/library/085-v176-dense-library-rows-rich-imported-metadata.js`
+- `pages/library/086-rich-library-row-presentation.js`
+- `pages/library/091-v177-adjustable-library-order-cover-size.js`
+- `pages/library/094-add-rich-fields-to-the-normal-library-editor.js`
+- `pages/library/110-library-display-modes.js`
+- `pages/library/111-classic-dynamic-library-switch.js`
+- `pages/library/112-dynamic-library-rendering.js`
+- `pages/library/116-v182-does-not-duplicate-the-library-configuration-introduced.js`
+- `pages/library/121-v189-library-sorting-unfinished-filter-dynamic.js`
+- `pages/library/122-v53-cached-library-filtering-now-understands-the-v189.js`
+- `pages/library/150-v224-library-controls.js`
+- `pages/library/160-v226-library-sizing-display-polish.js`
+- `pages/library-history/003-v63-library-history-integrity-large-library-fix.js`
+- `pages/old-system/057-v153-old-system.js`
+- `pages/old-system/076-old-system-date-view.js`
+- `pages/personal-order/044-v138-personal-order.js`
+- `pages/personal-order/045-v139-prioritize-personal-order-for-recommendations.js`
+- `pages/personal-order/152-v224-personal-order-sorting.js`
+- `pages/personal-order/156-v225-personal-order-toolbar-polish.js`
+- `pages/profile-settings/017-view-profile-settings.js`
+- `pages/settings/018-view-settings.js`
+- `pages/settings/052-v147-dynamic-settings-version-copyright-footer.js`
+- `pages/settings/070-v168-settings-cleanup.js`
+- `pages/settings/114-settings-ui.js`
+- `pages/settings/118-v184-settings-readability-metadata.js`
+- `pages/settings/131-settings-ui-2.js`
+- `pages/settings/139-settings-switch.js`
+- `pages/settings/141-v194-owns-the-canonical-category-icon-settings-object.js`
+- `pages/settings/145-v220-active-settings-page.js`
+- `pages/settings/146-v221-active-settings-page.js`
+- `pages/settings/159-v226-category-settings-dynamic-icon-mode.js`
+- `pages/statistics/009-derived-stats-helpers.js`
+- `pages/statistics/016-view-stats.js`
+- `pages/statistics/023-v16-features-backups-themes-stopwatch-mal-link-stats.js`
+- `pages/statistics/024-v28-analytics-cover-timeline-helpers.js`
+- `pages/statistics/032-v44-stopwatch-add-time-ratings-covers-xp-timeline.js`
+- `pages/statistics/040-v129-restored-v1-statistics.js`
+- `services/cloud-sync/004-v115-cloud-data-loss-prevention-recovery-guard.js`
+- `services/cloud-sync/019-v74-and-drag-ordering-now-persist-an-explicit.js`
+- `services/cloud-sync/033-v46-progression-cloud-sync-reliability.js`
+- `services/cloud-sync/041-v134-calculate-xp-sync-now-performance.js`
+- `services/cloud-sync/058-v155-complete-cloud-state-full-sync-now.js`
+- `services/cloud-sync/078-v173-persistence-merge-sync-now-backups.js`
+- `services/cloud-sync/084-v175-persistence-merge-sync-now-backup.js`
+- `services/cloud-sync/087-cloud-merge-preservation.js`
+- `services/cloud-sync/092-persistence-cloud-sync-now-backup.js`
+- `services/cloud-sync/096-protected-sync-now-verification.js`
+- `services/cloud-sync/101-persistence-cloud-sync-now-backup-2.js`
+- `services/cloud-sync/115-persistence-merge-sync-now-full-backup.js`
+- `services/cloud-sync/123-v189-cloud-backup-audit.js`
+- `services/cloud-sync/128-persistence-cloud-backup.js`
+- `services/cloud-sync/132-persistence-cloud-backup-2.js`
+- `services/cloud-sync/140-persistence-cloud-full-backup.js`
+- `utils/006-util.js`

@@ -8,6 +8,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import 'mediaflow_snapshot.dart';
 import 'models.dart';
 import 'collection_mutations.dart';
+import 'order_mutations.dart';
 
 Map<String, dynamic> _unpack(dynamic input) =>
     MediaFlowSnapshotCodec.decodeCloud(input);
@@ -34,6 +35,9 @@ class MediaFlowRepository extends ChangeNotifier {
   final Map<String, Map<String, dynamic>?> _pendingCollections = {};
   final Map<String, Map<String, dynamic>?> _originalCollections = {};
   int get pendingCollectionCount => _pendingCollections.length;
+  Map<String, dynamic>? _pendingOrderPlan;
+  Map<String, dynamic>? _originalOrderPlan;
+  bool get pendingOrderChanges => _pendingOrderPlan != null;
 
   bool busy = false;
   bool cached = false;
@@ -44,7 +48,7 @@ class MediaFlowRepository extends ChangeNotifier {
   String? _ownerId;
 
   MediaWorkspace get workspace => _viewCache ??= MediaWorkspace(_state);
-  int get pendingCount => _pendingMetadata.length + _pendingCollections.length;
+  int get pendingCount => _pendingMetadata.length + _pendingCollections.length + (_pendingOrderPlan != null ? 1 : 0);
   bool get hasData => _state.isNotEmpty;
 
   String get ownerId => _ownerId ?? client.auth.currentUser?.id ?? '';
@@ -74,6 +78,8 @@ class MediaFlowRepository extends ChangeNotifier {
     _originalFields = {};
     _pendingCollections.clear();
     _originalCollections.clear();
+    _pendingOrderPlan = null;
+    _originalOrderPlan = null;
     error = null;
     cloudConnected = false;
     cached = false;
@@ -120,6 +126,12 @@ class MediaFlowRepository extends ChangeNotifier {
               _originalCollections[entry.key.toString()] = entry.value is Map
                   ? Map<String, dynamic>.from(entry.value as Map) : null;
             }
+          }
+          final orderEdit = value['orderPlanChange'];
+          final orderBase = value['orderPlanBaseline'];
+          if (orderEdit is Map && orderBase is Map) {
+            _pendingOrderPlan = Map<String, dynamic>.from(orderEdit);
+            _originalOrderPlan = Map<String, dynamic>.from(orderBase);
           }
           _applyPending(_state);
         }
@@ -181,6 +193,9 @@ class MediaFlowRepository extends ChangeNotifier {
     for (final change in _pendingCollections.entries) {
       CollectionMutations.apply(target, change.key, change.value);
     }
+    if (_pendingOrderPlan != null) {
+      OrderMutations.apply(target, _pendingOrderPlan!);
+    }
   }
 
   Future<void> _saveLocalSnapshot() async {
@@ -194,15 +209,17 @@ class MediaFlowRepository extends ChangeNotifier {
 
   Future<void> _savePending() async {
     final file = await _pendingFile(ownerId);
-    await file.writeAsString(jsonEncode({'edits': _pendingMetadata, 'baselines': _originalFields, 'collectionChanges': _pendingCollections, 'collectionBaselines': _originalCollections}), flush: true);
+    await file.writeAsString(jsonEncode({'edits': _pendingMetadata, 'baselines': _originalFields, 'collectionChanges': _pendingCollections, 'collectionBaselines': _originalCollections, 'orderPlanChange': _pendingOrderPlan, 'orderPlanBaseline': _originalOrderPlan}), flush: true);
   }
 
-  /// Safe subset: cover, priority and tags. Deliberately excludes progress,
+  /// Safe subset: cover, priority, tags, description, rating. Excludes progress,
   /// status, add/delete and logging, which require canonical web XP/History rules.
   Future<void> stageTitleMetadata(String titleId, {
     String? coverUrl,
     String? priority,
     List<String>? tags,
+    String? description,
+    double? rating,
   }) async {
     final patch = <String, dynamic>{};
     if (coverUrl != null) patch['coverUrl'] = coverUrl.trim();
@@ -210,6 +227,13 @@ class MediaFlowRepository extends ChangeNotifier {
       patch['priority'] = priority;
     }
     if (tags != null) patch['tags'] = tags;
+    if (description != null) patch['description'] = description;
+    if (rating != null) {
+      if (!rating.isFinite || rating < 0 || rating > 10) {
+        throw ArgumentError.value(rating, 'rating', 'Rating must be from 0 to 10');
+      }
+      patch['rating'] = rating;
+    }
     if (patch.isEmpty) return;
     final all = workspace.titles;
     if (!all.any((t) => t.id == titleId)) throw StateError('Title no longer exists');
@@ -225,6 +249,45 @@ class MediaFlowRepository extends ChangeNotifier {
     notifyListeners();
     await _savePending();
     await _saveLocalSnapshot();
+  }
+
+  /// Efficient guarded batch priority change. Capture one baseline for every
+  /// changed title, then persist staged edits and snapshot once per batch.
+  /// Upload later rebases patches on a freshly loaded snapshot and rejects
+  /// concurrent edits without changing canonical logging/XP or History.
+  Future<int> stageBulkPriority(Iterable<String> ids, String priority) async {
+    if (!const {'low', 'medium', 'high'}.contains(priority)) {
+      throw ArgumentError.value(priority, 'priority', 'Unsupported priority');
+    }
+    final library = _state['library'];
+    if (library is! List) throw StateError('Library is not available');
+    final requested = ids.toSet();
+    if (requested.isEmpty) return 0;
+    final records = <String, Map>{};
+    for (final raw in library) {
+      if (raw is! Map) continue;
+      final id = plain(raw['id']);
+      if (requested.contains(id)) records[id] = raw;
+    }
+    if (records.length != requested.length) {
+      throw StateError('Some selected Library titles were removed. Nothing was changed.');
+    }
+    var count = 0;
+    for (final entry in records.entries) {
+      if (plain(entry.value['priority'], 'medium') == priority) continue;
+      final baseline = _originalFields.putIfAbsent(entry.key, () => {});
+      baseline.putIfAbsent('priority', () => entry.value['priority']);
+      _pendingMetadata.putIfAbsent(entry.key, () => {})['priority'] = priority;
+      entry.value['priority'] = priority;
+      count++;
+    }
+    if (count > 0) {
+      _viewCache = null;
+      notifyListeners();
+      await _savePending();
+      await _saveLocalSnapshot();
+    }
+    return count;
   }
 
   /// v372-compatible native Collections CRUD. Changes are local until the user
@@ -264,10 +327,30 @@ class MediaFlowRepository extends ChangeNotifier {
     await _saveLocalSnapshot();
   }
 
+  /// Native direct Personal Order editor. Does not overwrite category queue,
+  /// assigned-Collection, or future Personal Order metadata.
+  Future<void> stageDirectOrder(List<String> ids) async {
+    if (_state['orderPlan'] is! Map || _state['library'] is! List) {
+      throw StateError('Your Personal Order or Library is unavailable');
+    }
+    final liveIds = workspace.titles.map((t) => t.id).toSet();
+    if (_originalOrderPlan == null) {
+      _originalOrderPlan = Map<String, dynamic>.from(_state['orderPlan'] as Map);
+    }
+    final next = OrderMutations.changeDirectTitles(
+      Map<String, dynamic>.from(_state['orderPlan'] as Map), ids, liveIds);
+    _pendingOrderPlan = next;
+    OrderMutations.apply(_state, next);
+    _viewCache = null;
+    notifyListeners();
+    await _savePending();
+    await _saveLocalSnapshot();
+  }
+
   /// Conditional update: if the website or another device changed the cloud
   /// row between read and write, Supabase updates zero rows and we keep edits.
   Future<void> uploadPendingMetadata() async {
-    if (_pendingMetadata.isEmpty && _pendingCollections.isEmpty) return;
+    if (_pendingMetadata.isEmpty && _pendingCollections.isEmpty && _pendingOrderPlan == null) return;
     if (ownerId.isEmpty) throw StateError('Sign in first');
     if (busy) return;
     busy = true;
@@ -315,6 +398,13 @@ class MediaFlowRepository extends ChangeNotifier {
       for (final change in _pendingCollections.entries) {
         CollectionMutations.apply(remote, change.key, change.value);
       }
+      if (_pendingOrderPlan != null) {
+        if (_originalOrderPlan == null) {
+          throw StateError('Personal Order is missing its original cloud baseline');
+        }
+        OrderMutations.validateRemote(remote, _originalOrderPlan!);
+        OrderMutations.apply(remote, _pendingOrderPlan!);
+      }
       remote['savedAt'] = DateTime.now().millisecondsSinceEpoch;
       final encoded = await compute(_packCloud, remote);
       final newDate = DateTime.now().toUtc().toIso8601String();
@@ -330,6 +420,8 @@ class MediaFlowRepository extends ChangeNotifier {
       _originalFields.clear();
       _pendingCollections.clear();
       _originalCollections.clear();
+      _pendingOrderPlan = null;
+      _originalOrderPlan = null;
       updatedAt = updated.first['updated_at']?.toString();
       _state = remote;
       _viewCache = null;
@@ -365,6 +457,8 @@ class MediaFlowRepository extends ChangeNotifier {
     _originalFields.clear();
     _pendingCollections.clear();
     _originalCollections.clear();
+    _pendingOrderPlan = null;
+    _originalOrderPlan = null;
     cloudConnected = false;
     cached = false;
     hasCloudRow = false;

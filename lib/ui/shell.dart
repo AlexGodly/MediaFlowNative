@@ -3,7 +3,10 @@ import '../data/mediaflow_repository.dart';
 import '../data/models.dart';
 import 'design.dart';
 import 'pages.dart';
+import 'library_page.dart';
 import 'logging.dart';
+import 'settings_explorer.dart';
+import '../data/xp_insights.dart';
 
 class NativeShell extends StatefulWidget {
   final MediaFlowRepository repo;
@@ -141,6 +144,34 @@ class AccountPage extends StatelessWidget {
       ])),
       const SizedBox(height:12),
       MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+        const Text('Account settings inventory',style:TextStyle(fontWeight:FontWeight.w700)),
+        const SizedBox(height:5),
+        Text('${settings.length} stored top-level preferences. Inspect every saved field, including nested website settings.',
+          style:Theme.of(context).textTheme.bodySmall),
+        const SizedBox(height:8),
+        OutlinedButton.icon(icon:const Icon(Icons.tune),
+          onPressed:()=>Navigator.of(context).push(MaterialPageRoute<void>(
+            builder:(ctx)=>Scaffold(appBar:AppBar(title:const Text('MediaFlow Settings')),
+              body:SettingsSnapshotExplorer(repo:repo)))),
+          label:const Text('Inspect all website settings')),
+      ])),
+      const SizedBox(height:12),
+      Builder(builder:(ctx){
+        final xp=XpInsights.fromSnapshot(repo.workspace.json);
+        return MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          const Text('Saved XP audit',style:TextStyle(fontWeight:FontWeight.w700)),
+          const SizedBox(height:8),
+          Text('Stored session XP: ${xp.sessionXP} · Library additions: ${xp.libraryBonus}'),
+          Text('Stored XP subtotal: ${xp.confirmedTotal}',style:const TextStyle(fontWeight:FontWeight.w700)),
+          if(xp.missingXPCount>0)Text('${xp.missingXPCount} legacy sessions require canonical website XP recalculation.',
+            style:Theme.of(ctx).textTheme.bodySmall),
+          const SizedBox(height:5),
+          const Text('Read-only audit. This is not the website XP/streak/mission calculation engine.',
+            style:TextStyle(fontSize:12)),
+        ]));
+      }),
+      const SizedBox(height:12),
+      MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
         const Text('Cloud & data protection',style:TextStyle(fontWeight:FontWeight.bold)),
         const SizedBox(height:12),
         OutlinedButton.icon(onPressed:repo.busy?null:()async{
@@ -151,7 +182,7 @@ class AccountPage extends StatelessWidget {
         FilledButton.icon(onPressed:repo.pendingCount==0||repo.busy?null:()async{
           final allowed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
             title:const Text('Upload native edits?'),
-            content:Text('Upload ${repo.pendingCount} staged metadata/Collection edits. MediaFlow will refetch the complete existing snapshot, preserve unrelated fields, and reject a concurrent cloud change.'),
+            content:Text('Upload ${repo.pendingCount} staged metadata, Collection, or Personal Order edits. MediaFlow will refetch the complete existing snapshot, preserve unrelated fields, and reject a concurrent cloud change.'),
             actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),
               FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Upload edits'))]));
           if(allowed!=true)return;
@@ -176,9 +207,9 @@ class AccountPage extends StatelessWidget {
       ])),
       const SizedBox(height:12),
       MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const Text('Native v2 feature-parity roadmap',style:TextStyle(fontWeight:FontWeight.bold)),
+        const Text('Native v3.1 parity audit',style:TextStyle(fontWeight:FontWeight.bold)),
         const SizedBox(height:8),
-        const Text('Native v2 adds Collection creation, editing, title membership, ordering, and deletion with conflict-aware cloud uploads. Canonical logging/XP commits, full themes, and all website settings still require porting.',
+        const Text('Native v3.1 adds five Library views, additional filters and sorting, and batch priority editing. v3 also added direct-title Personal Order editing, a saved Settings inspector, and read-only XP auditing. Full logging/XP commits, advanced queues, missions, importers, and native settings handlers still require exact porting and validation.',
           style:TextStyle(fontSize:13)),
         const SizedBox(height:10),
         const Text('Your MediaFlow website remains fully usable and is not replaced by this app.',

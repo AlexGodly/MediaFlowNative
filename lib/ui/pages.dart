@@ -19,7 +19,7 @@ class DashboardPage extends StatelessWidget {
     final completed = titles.where((t) => t.status == 'completed').length;
     final width = MediaQuery.sizeOf(context).width;
     return ListView(padding: const EdgeInsets.all(18), children: [
-      const ScreenHeader(label:'MediaFlow Native · v2',title:'Your media, in motion.',
+      const ScreenHeader(label:'MediaFlow Native · v3.1',title:'Your media, in motion.',
         subtitle:'One Library. Every device. Your existing MediaFlow account.',icon:Icons.auto_awesome_rounded),
       const SizedBox(height: 15),
       GridView.count(shrinkWrap:true, physics: const NeverScrollableScrollPhysics(),
@@ -67,94 +67,6 @@ class DashboardPage extends StatelessWidget {
   }
 }
 
-class LibraryPage extends StatefulWidget {
-  final MediaFlowRepository repo;
-  final void Function(MediaTitle) openTitle;
-  const LibraryPage({super.key,required this.repo,required this.openTitle});
-  @override State<LibraryPage> createState()=>_LibraryPageState();
-}
-class _LibraryPageState extends State<LibraryPage> {
-  final query=TextEditingController();
-  String status='all', category='all';
-  bool grid=false;
-  @override void dispose(){query.dispose();super.dispose();}
-  @override Widget build(BuildContext context) {
-    final space=widget.repo.workspace;
-    final all=space.titles;
-    final search=query.text.trim().toLowerCase();
-    final visible=all.where((t)=>(search.isEmpty || t.title.toLowerCase().contains(search)) &&
-      (status=='all' || t.status==status) && (category=='all'||t.categoryId==category)).toList();
-    final statuses=all.map((x)=>x.status).toSet().toList()..sort();
-    final categories=space.categories;
-    return Column(children:[
-      Padding(padding:const EdgeInsets.fromLTRB(16,16,16,8),child:Column(children:[
-        ScreenHeader(label:'Library',title:'Every story, one place',
-          subtitle:'${NumberFormat.decimalPattern().format(all.length)} titles · ${NumberFormat.decimalPattern().format(visible.length)} shown',icon:Icons.grid_view_rounded),
-        const SizedBox(height:12),
-        TextField(controller:query,onChanged:(_)=>setState((){}),
-          decoration:InputDecoration(prefixIcon:const Icon(Icons.search),hintText:'Search your titles',
-            suffixIcon:query.text.isEmpty?null:IconButton(icon:const Icon(Icons.close),onPressed:(){query.clear();setState((){});}))),
-        const SizedBox(height:9),
-        Row(children:[
-          Expanded(child:DropdownButtonFormField<String>(initialValue:status,isExpanded:true,
-            decoration:const InputDecoration(labelText:'Status',isDense:true),
-            items:[const DropdownMenuItem(value:'all',child:Text('All statuses')),
-              ...statuses.map((s)=>DropdownMenuItem(value:s,child:Text(s,overflow:TextOverflow.ellipsis)))],
-            onChanged:(v)=>setState(()=>status=v??'all'))),
-          const SizedBox(width:8),
-          Expanded(child:DropdownButtonFormField<String>(initialValue:category,isExpanded:true,
-            decoration:const InputDecoration(labelText:'Category',isDense:true),
-            items:[const DropdownMenuItem(value:'all',child:Text('All categories')),
-              ...categories.map((c)=>DropdownMenuItem(value:c.id,child:Text(c.name,overflow:TextOverflow.ellipsis)))],
-            onChanged:(v)=>setState(()=>category=v??'all'))),
-          IconButton(tooltip:grid?'List view':'Grid view',
-            onPressed:()=>setState(()=>grid=!grid),
-            icon:Icon(grid?Icons.view_list_rounded:Icons.grid_view_rounded)),
-        ]),
-      ])),
-      Expanded(child:visible.isEmpty? const Center(child:Text('No titles match your search.')):
-        grid ? LayoutBuilder(builder:(context, constraints){
-          final count=(constraints.maxWidth/175).floor().clamp(2,7);
-          return GridView.builder(padding:const EdgeInsets.all(14),
-            gridDelegate:SliverGridDelegateWithFixedCrossAxisCount(
-              crossAxisCount:count,crossAxisSpacing:10,mainAxisSpacing:10,childAspectRatio:.65),
-            itemCount:visible.length,itemBuilder:(ctx,index){
-              final t=visible[index];
-              return InkWell(onTap:()=>widget.openTitle(t),child:MfCard(padding:const EdgeInsets.all(8),
-                child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-                  Expanded(child:SizedBox(width:double.infinity,child:FittedBox(fit:BoxFit.contain,child:TitleCover(t.cover,width:95,height:132)))),
-                  const SizedBox(height:8),
-                  Text(t.title,maxLines:2,overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w600,fontSize:12)),
-                  const SizedBox(height:4),
-                  Text('${t.progress}${t.total>0?'/ ${t.total}':''}',style:Theme.of(ctx).textTheme.labelSmall),
-                ])));
-            });
-        }): ListView.builder(padding:const EdgeInsets.fromLTRB(14,5,14,18),
-          itemCount:visible.length,itemExtent:103,itemBuilder:(context,index){
-            final t=visible[index];
-            return Padding(padding:const EdgeInsets.only(bottom:8),child:MfCard(padding:const EdgeInsets.symmetric(horizontal:10,vertical:8),
-              child:InkWell(onTap:()=>widget.openTitle(t),child:Row(children:[
-                TitleCover(t.cover,width:55,height:76),const SizedBox(width:11),
-                Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,
-                  mainAxisAlignment:MainAxisAlignment.center,children:[
-                    Text(t.title,maxLines:2,overflow:TextOverflow.ellipsis,
-                      style:const TextStyle(fontWeight:FontWeight.w700,fontSize:13)),
-                    const SizedBox(height:6),
-                    Text('${space.categoryFor(t.categoryId)?.name??'Category'}  ·  ${t.progress}${t.total>0?'/ ${t.total}':''}',
-                      maxLines:1,overflow:TextOverflow.ellipsis,style:Theme.of(context).textTheme.labelSmall),
-                    const SizedBox(height:5),
-                    Wrap(spacing:5,children:[MfBadge(t.status,icon:statusIcon(t.status),
-                      color:statusColor(t.status,Theme.of(context).colorScheme.primary)),
-                      if (t.priority=='high') const MfBadge('High priority',icon:Icons.flag_outlined,color:Color(0xFFED859B))]),
-                  ])),
-                const Icon(Icons.chevron_right_rounded,size:17),
-              ]))));
-          }),
-      ),
-    ]);
-  }
-}
-
 Future<void> showTitleDetails(BuildContext context, MediaFlowRepository repo, MediaTitle title) async {
   final updated=repo.workspace.titles.where((x)=>x.id==title.id);
   if(updated.isEmpty)return;
@@ -162,6 +74,8 @@ Future<void> showTitleDetails(BuildContext context, MediaFlowRepository repo, Me
   final space=repo.workspace;
   final cover=TextEditingController(text:item.cover);
   final tags=TextEditingController(text:item.tags.join(', '));
+  final description=TextEditingController(text:item.description);
+  final rating=TextEditingController(text:item.rating.toStringAsFixed(1));
   var priority=item.priority;
   var edited=false;
   await showDialog<void>(context:context,builder:(dialogContext)=>StatefulBuilder(
@@ -179,7 +93,7 @@ Future<void> showTitleDetails(BuildContext context, MediaFlowRepository repo, Me
           ]),const SizedBox(height:18),
           const Text('Editable metadata',style:TextStyle(fontWeight:FontWeight.w700)),
           const SizedBox(height:4),
-          Text('Native v1 safely edits cover, priority and tags. Progress, status, XP and logs still use the website.',
+          Text('Cover, priority, tags, rating and description can be staged for safe cloud upload. Progress, status, XP and official logging still require the website.',
             style:Theme.of(ctx).textTheme.bodySmall),
           const SizedBox(height:12),
           TextField(controller:cover,decoration:const InputDecoration(labelText:'Cover URL')),
@@ -189,19 +103,29 @@ Future<void> showTitleDetails(BuildContext context, MediaFlowRepository repo, Me
             onChanged:(v)=>setDialog(()=>priority=v??priority)),
           const SizedBox(height:10),
           TextField(controller:tags,decoration:const InputDecoration(labelText:'Tags (comma-separated)')),
+          const SizedBox(height:10),
+          TextField(controller:rating,keyboardType:const TextInputType.numberWithOptions(decimal:true),
+            decoration:const InputDecoration(labelText:'Rating (0–10)')),
+          const SizedBox(height:10),
+          TextField(controller:description,maxLines:4,decoration:const InputDecoration(labelText:'Description')),
         ]))),
       actions:[
         TextButton(onPressed:()=>Navigator.of(ctx).pop(),child:const Text('Close')),
         FilledButton.icon(icon:const Icon(Icons.save_outlined),label:const Text('Save locally'),
           onPressed:()async{
-            await repo.stageTitleMetadata(item.id,coverUrl:cover.text,priority:priority,
-              tags:tags.text.split(',').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList());
+            final score=double.tryParse(rating.text.trim());
+            if(score == null || score < 0 || score > 10){showMessage(ctx,'Rating must be between 0 and 10.');return;}
+            try {
+              await repo.stageTitleMetadata(item.id,coverUrl:cover.text,priority:priority,
+                description:description.text,rating:score,
+                tags:tags.text.split(',').map((e)=>e.trim()).where((e)=>e.isNotEmpty).toList());
+            } catch(e){if(ctx.mounted)showMessage(ctx,'Could not save: $e');return;}
             edited=true;
             if(ctx.mounted)Navigator.of(ctx).pop();
           }),
       ],
     )));
-  cover.dispose();tags.dispose();
+  cover.dispose();tags.dispose();description.dispose();rating.dispose();
   if(edited && context.mounted)showMessage(context,'Metadata saved locally. Use Account → Upload edits to sync safely.');
 }
 
@@ -401,28 +325,92 @@ class _CollectionTitlePickerState extends State<_CollectionTitlePicker> {
   }
 }
 
-class OrderPage extends StatelessWidget {
+class OrderPage extends StatefulWidget {
   final MediaFlowRepository repo;
   final void Function(MediaTitle) openTitle;
   const OrderPage({super.key,required this.repo,required this.openTitle});
+  @override State<OrderPage> createState()=>_OrderPageState();
+}
+class _OrderPageState extends State<OrderPage> {
+  Future<void> _add() async {
+    final existing=widget.repo.workspace.orderedIds.toSet();
+    final picked=await showModalBottomSheet<MediaTitle>(context:context,
+      isScrollControlled:true,showDragHandle:true,
+      builder:(ctx)=>_CollectionTitlePicker(
+        titles:widget.repo.workspace.titles,selected:existing));
+    if(picked==null)return;
+    try {
+      await widget.repo.stageDirectOrder([...widget.repo.workspace.orderedIds,picked.id]);
+      if(mounted)setState((){});
+    }catch(e){if(mounted)showMessage(context,'Order update failed: $e');}
+  }
+  Future<void> _reorder(int from,int to) async {
+    final ids=List<String>.from(widget.repo.workspace.orderedIds);
+    if(to>from)to--;
+    final moved=ids.removeAt(from);ids.insert(to,moved);
+    try{
+      await widget.repo.stageDirectOrder(ids);
+      if(mounted)setState((){});
+    }catch(e){if(mounted)showMessage(context,'Reorder failed: $e');}
+  }
+  Future<void> _remove(String id) async {
+    final ids=List<String>.from(widget.repo.workspace.orderedIds)..remove(id);
+    try{
+      await widget.repo.stageDirectOrder(ids);
+      if(mounted)setState((){});
+    }catch(e){if(mounted)showMessage(context,'Remove failed: $e');}
+  }
   @override Widget build(BuildContext context) {
-    final space=repo.workspace;
+    final space=widget.repo.workspace;
     final ids=space.orderedIds;
-    final byId={for(final title in space.titles)title.id:title};
+    final byId={for(final t in space.titles)t.id:t};
+    final width=MediaQuery.sizeOf(context).width;
     return Column(children:[
-      Padding(padding:const EdgeInsets.all(16),child:ScreenHeader(
-        label:'Personal Order',title:'Your own sequence',
-        subtitle:'${ids.length} direct title positions · Existing web order preserved',icon:Icons.format_list_numbered_rounded)),
-      Expanded(child:ListView.builder(itemCount:ids.length,itemBuilder:(ctx,index){
-        final title=byId[ids[index]];
-        if(title==null)return const SizedBox.shrink();
-        return Padding(padding:const EdgeInsets.fromLTRB(16,0,16,8),child:MfCard(padding:const EdgeInsets.all(10),
-          child:ListTile(onTap:()=>openTitle(title),contentPadding:EdgeInsets.zero,
-            leading:TitleCover(title.cover,width:42,height:60),
-            title:Text('${index+1}. ${title.title}',maxLines:2),
-            subtitle:Text('${title.status}  ·  ${title.progress} ${title.total>0?'/ ${title.total}':''}'),
-            trailing:const Icon(Icons.chevron_right_rounded))));
-      })),
+      Padding(padding:const EdgeInsets.all(16),child:Column(children:[
+        ScreenHeader(label:'Personal Order · direct titles',title:'Your sequence',
+          subtitle:'${ids.length} direct titles · Assigned Collection queues preserved',
+          icon:Icons.format_list_numbered_rounded),
+        const SizedBox(height:12),
+        Row(children:[
+          Expanded(child:FilledButton.icon(onPressed:_add,
+            icon:const Icon(Icons.add),label:const Text('Add title'))),
+          const SizedBox(width:8),
+          MfBadge(widget.repo.pendingOrderChanges?'Order unsynced':'Cloud order',icon:Icons.reorder),
+        ]),
+        const SizedBox(height:8),
+        const Text('Drag the handle to reorder direct titles. Native changes remain local until uploaded in Settings. Website Collection assignments and per-category queues remain untouched.',style:TextStyle(fontSize:12)),
+      ])),
+      Expanded(child:ids.isEmpty?const Center(child:Text('No direct titles. Add one from your Library.')):
+        ReorderableListView.builder(
+          buildDefaultDragHandles:false,
+          padding:const EdgeInsets.fromLTRB(12,0,12,18),
+          itemCount:ids.length,onReorder:_reorder,
+          itemBuilder:(ctx,index){
+            final id=ids[index],title=byId[id];
+            return Padding(key:ValueKey(id),padding:const EdgeInsets.only(bottom:8),
+              child:MfCard(padding:const EdgeInsets.symmetric(horizontal:9,vertical:6),
+                child:Row(children:[
+                  ReorderableDragStartListener(index:index,child:const Padding(
+                    padding:EdgeInsets.symmetric(horizontal:3),child:Icon(Icons.drag_handle))),
+                  const SizedBox(width:5),
+                  Text('${index+1}.',style:const TextStyle(fontWeight:FontWeight.w600)),
+                  const SizedBox(width:8),
+                  if(title!=null)TitleCover(title.cover,width:40,height:56),
+                  const SizedBox(width:10),
+                  Expanded(child:InkWell(onTap:title==null?null:()=>widget.openTitle(title),
+                    child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                      Text(title?.title??'Title unavailable',maxLines:2,
+                        overflow:TextOverflow.ellipsis,style:const TextStyle(fontWeight:FontWeight.w600)),
+                      if(title!=null)Text('${title.status} · ${title.progress}${title.total>0?'/${title.total}':''}',
+                        style:Theme.of(context).textTheme.labelSmall),
+                    ]))),
+                  IconButton(tooltip:'Remove from Personal Order',icon:const Icon(Icons.remove_circle_outline),
+                    onPressed:()=>_remove(id)),
+                  if(width>550)const Icon(Icons.chevron_right,size:18),
+                ])));
+
+          },
+        )),
     ]);
   }
 }
