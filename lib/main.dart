@@ -156,7 +156,7 @@ class _MediaFlowWebsiteState extends State<MediaFlowWebsite> {
           if (mounted) setState(() { _loaded = true; _offline = false; });
         },
         onReceivedError: (controller, request, error) {
-          if (request.isForMainFrame && mounted) setState(() => _offline = true);
+          if (request.isForMainFrame == true && mounted) setState(() => _offline = true);
         },
         onDownloadStartRequest: (controller, request) => _download(request),
         onCreateWindow: (controller, action) async {
