@@ -5,65 +5,148 @@ import '../data/mediaflow_snapshot.dart';
 import '../data/models.dart';
 import '../data/collection_mutations.dart';
 import 'design.dart';
+import 'theme_tokens.dart';
 
 class DashboardPage extends StatelessWidget {
   final MediaFlowRepository repo;
   final void Function(MediaTitle) openTitle;
-  const DashboardPage({super.key, required this.repo, required this.openTitle});
-  @override
-  Widget build(BuildContext context) {
-    final data = repo.workspace;
-    final titles = data.titles;
-    final sessions = data.sessions;
-    final active = titles.where((t) => ['watching','reading','active'].contains(t.status)).take(6).toList();
-    final completed = titles.where((t) => t.status == 'completed').length;
-    final width = MediaQuery.sizeOf(context).width;
-    return ListView(padding: const EdgeInsets.all(18), children: [
-      const ScreenHeader(label:'MediaFlow Native · v3.1',title:'Your media, in motion.',
-        subtitle:'One Library. Every device. Your existing MediaFlow account.',icon:Icons.auto_awesome_rounded),
-      const SizedBox(height: 15),
-      GridView.count(shrinkWrap:true, physics: const NeverScrollableScrollPhysics(),
-        crossAxisCount: width < 650 ? 3 : 4, childAspectRatio: width < 400 ? .87 : 1.35,
-        crossAxisSpacing: 9, mainAxisSpacing: 9, children: [
-          MfMetric(icon:Icons.library_books_outlined,label:'Library',value:NumberFormat.compact().format(titles.length)),
-          MfMetric(icon:Icons.task_alt_outlined,label:'Completed',value:NumberFormat.compact().format(completed)),
-          MfMetric(icon:Icons.history_rounded,label:'Sessions',value:NumberFormat.compact().format(sessions.length)),
-          if (width >= 650) MfMetric(icon:Icons.collections_bookmark_outlined,label:'Collections',value:'${data.collections.length}'),
-        ]),
-      const SizedBox(height: 22),
-      Row(children:[const Icon(Icons.play_circle_outline_rounded,size:20), const SizedBox(width:8),
-        Text('Continue your journey',style:Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w700))]),
-      const SizedBox(height: 12),
-      if (active.isEmpty) const MfCard(child:Text('Your active Library titles will appear here after you sign in.')),
-      for (final title in active) ...[
-        MfCard(padding:const EdgeInsets.all(11),child: InkWell(
-          borderRadius:BorderRadius.circular(12),onTap:()=>openTitle(title),
-          child:Row(children:[
-            TitleCover(title.cover,width:54,height:74), const SizedBox(width:13),
+  const DashboardPage({super.key,required this.repo,required this.openTitle});
+  @override Widget build(BuildContext context) {
+    final space=repo.workspace;
+    final titles=space.titles;
+    final sessions=space.sessions;
+    final active=titles.where((t)=>
+      ['watching','reading','active'].contains(t.status.toLowerCase())).toList();
+    final completed=titles.where((t)=>t.status.toLowerCase()=='completed').length;
+    final p=mfPalette(context);
+    final width=MediaQuery.sizeOf(context).width;
+    final compact=width<650;
+    final featured=active.isNotEmpty?active.first:(titles.isNotEmpty?titles.first:null);
+    final recentSessions=sessions.length;
+    final completionPercent=titles.isEmpty?0.0:completed/titles.length;
+    final mediaName=featured?.title??'Your universe, organized.';
+    return ListView(padding:EdgeInsets.symmetric(horizontal:compact?15:25,vertical:compact?17:25),children:[
+      ConstrainedBox(constraints:const BoxConstraints(maxWidth:1450),
+        child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
+          Row(children:[
+            Container(width:7,height:7,decoration:BoxDecoration(color:p.accent,shape:BoxShape.circle)),
+            const SizedBox(width:9),
+            Text('YOUR MEDIA UNIVERSE',style:TextStyle(fontWeight:FontWeight.w900,
+              fontSize:10,letterSpacing:2.3,color:p.accent)),
+            const Spacer(),
+            if(!compact)MfBadge('Native workspace',icon:Icons.devices_rounded),
+          ]),
+          const SizedBox(height:10),
+          Text('Welcome back.',style:TextStyle(color:p.text,fontSize:compact?31:39,
+            height:1.08,letterSpacing:-1.8,fontWeight:FontWeight.w900)),
+          const SizedBox(height:5),
+          Text('Everything you love, all in one place.',style:TextStyle(color:p.muted,fontSize:13)),
+          const SizedBox(height:23),
+          if(featured!=null) _featureHero(context,featured,mediaName,compact,p),
+          if(featured==null) MfAmbientCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            const Text('Your next story starts here.',style:TextStyle(fontWeight:FontWeight.w900,fontSize:22)),
+            const SizedBox(height:8),Text('Sign in and sync your Library to see your collection.',style:TextStyle(color:p.muted)),
+          ])),
+          const SizedBox(height:16),
+          GridView.count(shrinkWrap:true,physics:const NeverScrollableScrollPhysics(),
+            crossAxisCount:compact?2:4,childAspectRatio:compact?1.03:1.9,
+            crossAxisSpacing:10,mainAxisSpacing:10,children:[
+              MfMetric(icon:Icons.video_library_outlined,label:'Titles in Library',
+                value:NumberFormat.compact().format(titles.length)),
+              MfMetric(icon:Icons.task_alt_rounded,label:'Completed',value:NumberFormat.compact().format(completed)),
+              MfMetric(icon:Icons.schedule_rounded,label:'Sessions logged',
+                value:NumberFormat.compact().format(recentSessions)),
+              MfMetric(icon:Icons.grid_view_rounded,label:'Collections',
+                value:NumberFormat.compact().format(space.collections.length)),
+            ]),
+          const SizedBox(height:27),
+          MfSectionHeading(icon:Icons.play_circle_outline_rounded,
+            title:'Currently in progress',detail:'Pick up where you left off',
+            trailing:MfBadge('${active.length} active')),
+          const SizedBox(height:14),
+          if(active.isEmpty)MfCard(child:Text('Your active titles will appear here.',
+            style:TextStyle(color:p.muted))),
+          if(active.isNotEmpty)
+            SizedBox(height:compact?218:246,child:ListView.separated(
+              scrollDirection:Axis.horizontal,
+              itemCount:active.length>16?16:active.length,
+              separatorBuilder:(_,__)=>const SizedBox(width:12),
+              itemBuilder:(ctx,i){
+                final title=active[i];
+                final w=compact?133.0:162.0;
+                return SizedBox(width:w,child:InkWell(
+                  borderRadius:BorderRadius.circular(18),onTap:()=>openTitle(title),
+                  child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+                    Stack(children:[
+                      TitleCover(title.cover,width:w,height:compact?163:183),
+                      Positioned(left:7,bottom:7,right:7,child:Container(
+                        padding:const EdgeInsets.symmetric(horizontal:7,vertical:5),
+                        decoration:BoxDecoration(color:Colors.black.withValues(alpha:.70),
+                          borderRadius:BorderRadius.circular(8)),
+                        child:Text('${title.progress}${title.total>0?' / ${title.total}':''} units',
+                          maxLines:1,style:const TextStyle(fontSize:10,color:Colors.white,
+                            fontWeight:FontWeight.w700)))),
+                    ]),const SizedBox(height:8),
+                    Text(title.title,maxLines:1,overflow:TextOverflow.ellipsis,
+                      style:TextStyle(fontWeight:FontWeight.w800,color:p.text,fontSize:12)),
+                    const SizedBox(height:7),
+                    ClipRRect(borderRadius:BorderRadius.circular(8),child:LinearProgressIndicator(
+                      value:title.total>0?(title.progress/title.total).clamp(0.0,1.0):0,
+                      backgroundColor:p.raised,color:p.accent,minHeight:4)),
+                  ])));
+              })),
+          const SizedBox(height:25),
+          MfSectionHeading(icon:Icons.auto_graph_rounded,
+            title:'Your progress',detail:'A snapshot of your media journey'),
+          const SizedBox(height:12),
+          MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+            Row(children:[Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
+              Text('Completion overview',style:TextStyle(color:p.text,fontWeight:FontWeight.w800,fontSize:15)),
+              const SizedBox(height:4),Text('$completed of ${titles.length} titles completed',
+                style:TextStyle(color:p.muted,fontSize:11.5)),
+            ])),Text('${(completionPercent*100).toStringAsFixed(1)}%',
+              style:TextStyle(color:p.accent,fontSize:24,fontWeight:FontWeight.w900,letterSpacing:-.9))]),
+            const SizedBox(height:16),ClipRRect(borderRadius:BorderRadius.circular(12),
+              child:LinearProgressIndicator(value:completionPercent,backgroundColor:p.raised,
+                color:p.accent,minHeight:10)),
+          ])),
+          const SizedBox(height:14),
+          MfAmbientCard(padding:const EdgeInsets.all(16),child:Row(children:[
+            Icon(Icons.shield_outlined,color:p.accent,size:21),const SizedBox(width:12),
             Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-              Text(title.title,maxLines:2,overflow:TextOverflow.ellipsis,
-                style:const TextStyle(fontWeight:FontWeight.w700,fontSize:14)),
-              const SizedBox(height:5),
-              Text('${title.progress}${title.total > 0 ? ' / ${title.total}' : ''} units',
-                style:Theme.of(context).textTheme.bodySmall),
-              const SizedBox(height:6),
-              LinearProgressIndicator(value:title.total>0?(title.progress/title.total).clamp(0.0,1.0):0,
-                minHeight:4,borderRadius:BorderRadius.circular(3)),
-            ])),const SizedBox(width:5),const Icon(Icons.chevron_right_rounded,size:20),
-          ]))),
-        const SizedBox(height: 9),
-      ],
-      const SizedBox(height: 18),
-      MfCard(child: Row(children:[
-        Icon(Icons.shield_outlined,color:Theme.of(context).colorScheme.primary), const SizedBox(width:12),
-        Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-          const Text('Connected to your existing account',style:TextStyle(fontWeight:FontWeight.w700)),
-          const SizedBox(height:3),
-          Text('This native app reads the same Supabase workspace as the website. Advanced logging and XP writes stay protected during the initial port.',
-            style:Theme.of(context).textTheme.bodySmall),
+              Text('Connected to your MediaFlow account',style:TextStyle(fontWeight:FontWeight.w800,
+                color:p.text,fontSize:12)),const SizedBox(height:4),
+              Text('Safe cloud reading and staged edits. Website-only XP and logging writes stay protected.',
+                style:TextStyle(color:p.muted,fontSize:11,height:1.5)),
+            ])),
+          ])),
+          const SizedBox(height:35),
         ])),
-      ])),
     ]);
+  }
+
+  Widget _featureHero(BuildContext context,MediaTitle featured,String title,bool compact,MfPalette p){
+    final coverWidth=compact?100.0:165.0;
+    final coverHeight=compact?146.0:225.0;
+    return MfAmbientCard(padding:EdgeInsets.all(compact?15:23),child:Row(children:[
+      TitleCover(featured.cover,width:coverWidth,height:coverHeight),
+      SizedBox(width:compact?14:25),
+      Expanded(child:Column(crossAxisAlignment:CrossAxisAlignment.start,
+        mainAxisAlignment:MainAxisAlignment.center,children:[
+        MfBadge('UP NEXT',icon:Icons.auto_awesome_rounded),
+        const SizedBox(height:10),
+        Text(title,maxLines:3,overflow:TextOverflow.ellipsis,
+          style:TextStyle(color:p.text,fontSize:compact?19:27,
+            fontWeight:FontWeight.w900,height:1.16,letterSpacing:-.7)),
+        const SizedBox(height:8),
+        Text('Your next chapter is waiting.',maxLines:2,
+          style:TextStyle(color:p.muted,fontSize:compact?10.5:13)),
+        const SizedBox(height:14),
+        TextButton.icon(onPressed:()=>openTitle(featured),
+          icon:const Icon(Icons.arrow_outward_rounded,size:16),
+          label:const Text('View title')),
+      ])),
+    ]));
   }
 }
 
