@@ -25,6 +25,11 @@ jobs:
       - run: flutter create --platforms=android --org com.alexgodly --project-name mediaflow_native .
       - run: python scripts/brand_platforms.py
       - run: flutter pub get
+      - name: Update legacy WebView ProGuard rule for current Android Gradle Plugin
+        shell: bash
+        run: |
+          set -euo pipefail
+          find "$HOME/.pub-cache/hosted/pub.dev" -path '*/flutter_inappwebview_android-*/android/build.gradle' -type f -print -exec sed -i 's/proguard-android\.txt/proguard-android-optimize.txt/g' {} \;
       - run: dart format --output=write lib/main.dart lib/shell_config.dart lib/web_export_bridge.dart test/shell_config_test.dart
       - run: flutter analyze --no-fatal-infos
       - run: flutter test
