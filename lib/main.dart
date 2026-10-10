@@ -11,7 +11,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Supabase.initialize(
     url:MediaFlowConfig.supabaseUrl,
-    anonKey:MediaFlowConfig.supabasePublishableKey,
+    publishableKey:MediaFlowConfig.supabasePublishableKey,
     authOptions:const FlutterAuthClientOptions(autoRefreshToken:true),
   );
   runApp(const MediaFlowNativeApp());

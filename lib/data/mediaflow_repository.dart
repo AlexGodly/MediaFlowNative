@@ -7,6 +7,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import 'mediaflow_snapshot.dart';
 import 'models.dart';
+import 'collection_mutations.dart';
 
 Map<String, dynamic> _unpack(dynamic input) =>
     MediaFlowSnapshotCodec.decodeCloud(input);
@@ -30,6 +31,10 @@ class MediaFlowRepository extends ChangeNotifier {
   MediaWorkspace? _viewCache;
   Map<String, Map<String, dynamic>> _pendingMetadata = {};
   Map<String, Map<String, dynamic>> _originalFields = {};
+  final Map<String, Map<String, dynamic>?> _pendingCollections = {};
+  final Map<String, Map<String, dynamic>?> _originalCollections = {};
+  int get pendingCollectionCount => _pendingCollections.length;
+
   bool busy = false;
   bool cached = false;
   bool cloudConnected = false;
@@ -39,7 +44,7 @@ class MediaFlowRepository extends ChangeNotifier {
   String? _ownerId;
 
   MediaWorkspace get workspace => _viewCache ??= MediaWorkspace(_state);
-  int get pendingCount => _pendingMetadata.length;
+  int get pendingCount => _pendingMetadata.length + _pendingCollections.length;
   bool get hasData => _state.isNotEmpty;
 
   String get ownerId => _ownerId ?? client.auth.currentUser?.id ?? '';
@@ -67,6 +72,8 @@ class MediaFlowRepository extends ChangeNotifier {
     _viewCache = null;
     _pendingMetadata = {};
     _originalFields = {};
+    _pendingCollections.clear();
+    _originalCollections.clear();
     error = null;
     cloudConnected = false;
     cached = false;
@@ -98,6 +105,20 @@ class MediaFlowRepository extends ChangeNotifier {
                 _originalFields[entry.key.toString()] =
                     Map<String, dynamic>.from(entry.value as Map);
               }
+            }
+          }
+          final collectionChanges = value['collectionChanges'];
+          final collectionBaselines = value['collectionBaselines'];
+          if (collectionChanges is Map) {
+            for (final entry in collectionChanges.entries) {
+              _pendingCollections[entry.key.toString()] = entry.value is Map
+                  ? Map<String, dynamic>.from(entry.value as Map) : null;
+            }
+          }
+          if (collectionBaselines is Map) {
+            for (final entry in collectionBaselines.entries) {
+              _originalCollections[entry.key.toString()] = entry.value is Map
+                  ? Map<String, dynamic>.from(entry.value as Map) : null;
             }
           }
           _applyPending(_state);
@@ -150,11 +171,15 @@ class MediaFlowRepository extends ChangeNotifier {
 
   void _applyPending(Map<String, dynamic> target) {
     final library = target['library'];
-    if (library is! List) return;
-    for (final record in library) {
-      if (record is! Map) continue;
-      final patch = _pendingMetadata[plain(record['id'])];
-      if (patch != null) record.addAll(patch);
+    if (library is List) {
+      for (final record in library) {
+        if (record is! Map) continue;
+        final patch = _pendingMetadata[plain(record['id'])];
+        if (patch != null) record.addAll(patch);
+      }
+    }
+    for (final change in _pendingCollections.entries) {
+      CollectionMutations.apply(target, change.key, change.value);
     }
   }
 
@@ -169,7 +194,7 @@ class MediaFlowRepository extends ChangeNotifier {
 
   Future<void> _savePending() async {
     final file = await _pendingFile(ownerId);
-    await file.writeAsString(jsonEncode({'edits': _pendingMetadata, 'baselines': _originalFields}), flush: true);
+    await file.writeAsString(jsonEncode({'edits': _pendingMetadata, 'baselines': _originalFields, 'collectionChanges': _pendingCollections, 'collectionBaselines': _originalCollections}), flush: true);
   }
 
   /// Safe subset: cover, priority and tags. Deliberately excludes progress,
@@ -202,10 +227,47 @@ class MediaFlowRepository extends ChangeNotifier {
     await _saveLocalSnapshot();
   }
 
+  /// v372-compatible native Collections CRUD. Changes are local until the user
+  /// chooses Upload. The original complete Collection object is remembered so
+  /// concurrent cloud edits cannot be silently overwritten.
+  Future<void> stageCollection(Map<String, dynamic> collection) async {
+    final id = plain(collection['id']);
+    if (id.isEmpty || plain(collection['title']).trim().isEmpty) {
+      throw StateError('Collection ID and name are required');
+    }
+    if (!_originalCollections.containsKey(id)) {
+      _originalCollections[id] = CollectionMutations.collectionById(_state, id);
+    }
+    _pendingCollections[id] = Map<String, dynamic>.from(collection);
+    CollectionMutations.apply(_state, id, collection);
+    _viewCache = null;
+    notifyListeners();
+    await _savePending();
+    await _saveLocalSnapshot();
+  }
+
+  Future<void> stageCollectionDelete(String id) async {
+    final original = CollectionMutations.collectionById(_state, id);
+    if (original == null) return;
+    if (!_originalCollections.containsKey(id)) _originalCollections[id] = original;
+    if (_originalCollections[id] == null) {
+      // Delete a Collection created only on this device; nothing to sync.
+      _pendingCollections.remove(id);
+      _originalCollections.remove(id);
+    } else {
+      _pendingCollections[id] = null;
+    }
+    CollectionMutations.apply(_state, id, null);
+    _viewCache = null;
+    notifyListeners();
+    await _savePending();
+    await _saveLocalSnapshot();
+  }
+
   /// Conditional update: if the website or another device changed the cloud
   /// row between read and write, Supabase updates zero rows and we keep edits.
   Future<void> uploadPendingMetadata() async {
-    if (_pendingMetadata.isEmpty) return;
+    if (_pendingMetadata.isEmpty && _pendingCollections.isEmpty) return;
     if (ownerId.isEmpty) throw StateError('Sign in first');
     if (busy) return;
     busy = true;
@@ -243,6 +305,16 @@ class MediaFlowRepository extends ChangeNotifier {
       if (hits.length != _pendingMetadata.length) {
         throw StateError('One or more edited titles were removed on another device. Nothing was written.');
       }
+      // Validate ALL changes before applying ANY Collection changes.
+      for (final id in _pendingCollections.keys) {
+        if (!_originalCollections.containsKey(id)) {
+          throw StateError('Collection has no original snapshot. Upload stopped.');
+        }
+        CollectionMutations.verifyBaseline(remote, id, _originalCollections[id]);
+      }
+      for (final change in _pendingCollections.entries) {
+        CollectionMutations.apply(remote, change.key, change.value);
+      }
       remote['savedAt'] = DateTime.now().millisecondsSinceEpoch;
       final encoded = await compute(_packCloud, remote);
       final newDate = DateTime.now().toUtc().toIso8601String();
@@ -251,11 +323,13 @@ class MediaFlowRepository extends ChangeNotifier {
           .eq('user_id', ownerId)
           .eq('updated_at', row['updated_at'])
           .select('updated_at');
-      if (updated is! List || updated.length != 1) {
+      if (updated.length != 1) {
         throw StateError('Your web app saved newer changes during sync. No native changes were uploaded; retry to rebase safely.');
       }
       _pendingMetadata.clear();
       _originalFields.clear();
+      _pendingCollections.clear();
+      _originalCollections.clear();
       updatedAt = updated.first['updated_at']?.toString();
       _state = remote;
       _viewCache = null;
@@ -264,7 +338,7 @@ class MediaFlowRepository extends ChangeNotifier {
       await _savePending();
       await _saveLocalSnapshot();
     } catch (e) {
-      error = 'Metadata sync not completed: $e';
+      error = 'Native edits not uploaded: $e';
       rethrow;
     } finally {
       busy = false;
@@ -289,6 +363,8 @@ class MediaFlowRepository extends ChangeNotifier {
     _viewCache = null;
     _pendingMetadata.clear();
     _originalFields.clear();
+    _pendingCollections.clear();
+    _originalCollections.clear();
     cloudConnected = false;
     cached = false;
     hasCloudRow = false;

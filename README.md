@@ -1,4 +1,4 @@
-# MediaFlow Native v1
+# MediaFlow Native v2
 
 **Independent cross-platform Flutter app for Android, iOS and Windows.**  
 **Developed for the MediaFlow ecosystem by Alex Godly.**  
@@ -86,3 +86,7 @@ There is **no Supabase SQL migration** included. Existing RLS policies must rema
 Local compressed cache/drafts are stored in the user's application support directory. They are not encrypted at rest. Authentication uses the official Supabase client (tokens are never written into this repository). App release signing, store submissions, production cloud testing and real-device profiling remain outstanding.
 
 See `docs/FEATURE_PARITY.md` for the exact implemented/incomplete matrix.
+
+## Native v2 additions
+
+Native Collections CRUD (including member editing and ordering), guarded cloud upload and History search/filters/per-unit inspection. **Native v2 is not full v372 parity yet; official consumption/XP commits remain on the website.** Read `docs/FEATURE_PARITY.md`.

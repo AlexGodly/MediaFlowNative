@@ -150,8 +150,8 @@ class AccountPage extends StatelessWidget {
         const SizedBox(height:8),
         FilledButton.icon(onPressed:repo.pendingCount==0||repo.busy?null:()async{
           final allowed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
-            title:const Text('Upload staged metadata?'),
-            content:Text('Upload ${repo.pendingCount} title metadata edits. MediaFlow will refetch the complete existing snapshot, preserve unrelated fields, and reject a concurrent cloud change.'),
+            title:const Text('Upload native edits?'),
+            content:Text('Upload ${repo.pendingCount} staged metadata/Collection edits. MediaFlow will refetch the complete existing snapshot, preserve unrelated fields, and reject a concurrent cloud change.'),
             actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),
               FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Upload edits'))]));
           if(allowed!=true)return;
@@ -160,14 +160,14 @@ class AccountPage extends StatelessWidget {
             if(context.mounted)showMessage(context,'Metadata safely uploaded to your existing MediaFlow cloud.');
           }catch(e){if(context.mounted)showMessage(context,'Upload blocked: $e');}
         },icon:const Icon(Icons.cloud_upload_outlined),
-          label:Text('Upload ${repo.pendingCount} metadata edits')),
+          label:Text('Upload ${repo.pendingCount} native edits')),
         const SizedBox(height:8),
         OutlinedButton.icon(onPressed:()async{
           try{
             final location=await repo.exportSnapshot();
-            if(context.mounted)showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
+            if(context.mounted){showDialog<void>(context:context,builder:(ctx)=>AlertDialog(
               title:const Text('Local backup exported'),content:SelectableText(location),
-              actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Close'))]));
+              actions:[TextButton(onPressed:()=>Navigator.pop(ctx),child:const Text('Close'))]));}
           }catch(e){if(context.mounted)showMessage(context,'Export failed: $e');}
         },icon:const Icon(Icons.file_download_outlined),label:const Text('Export local snapshot JSON')),
         const SizedBox(height:7),
@@ -176,9 +176,9 @@ class AccountPage extends StatelessWidget {
       ])),
       const SizedBox(height:12),
       MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const Text('Feature-parity roadmap',style:TextStyle(fontWeight:FontWeight.bold)),
+        const Text('Native v2 feature-parity roadmap',style:TextStyle(fontWeight:FontWeight.bold)),
         const SizedBox(height:8),
-        const Text('Native v1 includes account sign-in, cloud Library, Dashboard, Collections, Personal Order, History, basic Statistics, local logging drafts, metadata editing and safe cloud uploads. Full logging commits, XP engine, Collections editing, complete themes and all web settings still require porting.',
+        const Text('Native v2 adds Collection creation, editing, title membership, ordering, and deletion with conflict-aware cloud uploads. Canonical logging/XP commits, full themes, and all website settings still require porting.',
           style:TextStyle(fontSize:13)),
         const SizedBox(height:10),
         const Text('Your MediaFlow website remains fully usable and is not replaced by this app.',

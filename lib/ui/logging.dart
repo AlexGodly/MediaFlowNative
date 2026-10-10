@@ -33,12 +33,6 @@ class _NativeLoggingPageState extends State<NativeLoggingPage> {
   }
   @override void dispose(){timer?.cancel();store.save(draft);super.dispose();}
   List<Map<String,dynamic>> get entries=>asObjects(draft['titles']);
-  Map<String,dynamic>? _entry(String id){
-    for(final item in (draft['titles'] as List)){
-      if(item is Map && plain(item['id'])==id)return Map<String,dynamic>.from(item);
-    }
-    return null;
-  }
   void _update(String id,void Function(Map<String,dynamic>) fn){
     final items=draft['titles'] as List;
     final index=items.indexWhere((v)=>v is Map && plain(v['id'])==id);
