@@ -6,6 +6,7 @@ import '../data/models.dart';
 import '../data/collection_mutations.dart';
 import 'design.dart';
 import 'theme_tokens.dart';
+import 'dashboard_tools.dart';
 
 class DashboardPage extends StatelessWidget {
   final MediaFlowRepository repo;
@@ -34,7 +35,7 @@ class DashboardPage extends StatelessWidget {
             Text('YOUR MEDIA UNIVERSE',style:TextStyle(fontWeight:FontWeight.w900,
               fontSize:10,letterSpacing:2.3,color:p.accent)),
             const Spacer(),
-            if(!compact)MfBadge('Native workspace',icon:Icons.devices_rounded),
+            if(!compact)MfBadge('YOUR LIBRARY',icon:Icons.auto_awesome_rounded),
           ]),
           const SizedBox(height:10),
           Text('Welcome back.',style:TextStyle(color:p.text,fontSize:compact?31:39,
@@ -59,6 +60,8 @@ class DashboardPage extends StatelessWidget {
               MfMetric(icon:Icons.grid_view_rounded,label:'Collections',
                 value:NumberFormat.compact().format(space.collections.length)),
             ]),
+          const SizedBox(height:20),
+          DashboardTools(key:ValueKey('time-${repo.ownerId}'),repo:repo),
           const SizedBox(height:27),
           MfSectionHeading(icon:Icons.play_circle_outline_rounded,
             title:'Currently in progress',detail:'Pick up where you left off',
@@ -176,7 +179,7 @@ Future<void> showTitleDetails(BuildContext context, MediaFlowRepository repo, Me
           ]),const SizedBox(height:18),
           const Text('Editable metadata',style:TextStyle(fontWeight:FontWeight.w700)),
           const SizedBox(height:4),
-          Text('Cover, priority, tags, rating and description can be staged for safe cloud upload. Progress, status, XP and official logging still require the website.',
+          Text('Cover, priority, tags, rating and description can be staged for safe cloud upload. Other progress and logging controls will appear when available.',
             style:Theme.of(ctx).textTheme.bodySmall),
           const SizedBox(height:12),
           TextField(controller:cover,decoration:const InputDecoration(labelText:'Cover URL')),
@@ -209,7 +212,7 @@ Future<void> showTitleDetails(BuildContext context, MediaFlowRepository repo, Me
       ],
     )));
   cover.dispose();tags.dispose();description.dispose();rating.dispose();
-  if(edited && context.mounted)showMessage(context,'Metadata saved locally. Use Account → Upload edits to sync safely.');
+  if(edited && context.mounted)showMessage(context,'Changes saved. Open Settings to sync them.');
 }
 
 class CollectionsPage extends StatefulWidget {
@@ -324,14 +327,14 @@ class _CollectionsPageState extends State<CollectionsPage> {
     else { collections.sort((a,b)=>numeric(b.raw['updatedAt']).compareTo(numeric(a.raw['updatedAt']))); }
     return Column(children:[
       Padding(padding:const EdgeInsets.fromLTRB(16,16,16,10),child:Column(children:[
-        ScreenHeader(label:'Collections · Native v2',title:'Curated universes',
+        ScreenHeader(label:'Collections',title:'Curated universes',
           subtitle:'${space.collections.length} Collections · ${widget.repo.pendingCollectionCount} staged changes',
           icon:Icons.collections_bookmark_outlined),
         const SizedBox(height:12),
         Row(children:[Expanded(child:FilledButton.icon(onPressed:()=>_edit(),
           icon:const Icon(Icons.add),label:const Text('New Collection'))),
           const SizedBox(width:9),
-          IconButton.filledTonal(tooltip:'Upload pending native changes',
+          IconButton.filledTonal(tooltip:'Sync saved changes',
             onPressed:widget.repo.pendingCount==0||widget.repo.busy?null:()async{
               try{await widget.repo.uploadPendingMetadata();
                 if(context.mounted)showMessage(context,'Collections and metadata synchronized.');
@@ -461,7 +464,7 @@ class _OrderPageState extends State<OrderPage> {
           MfBadge(widget.repo.pendingOrderChanges?'Order unsynced':'Cloud order',icon:Icons.reorder),
         ]),
         const SizedBox(height:8),
-        const Text('Drag the handle to reorder direct titles. Native changes remain local until uploaded in Settings. Website Collection assignments and per-category queues remain untouched.',style:TextStyle(fontSize:12)),
+        const Text('Drag the handle to reorder direct titles. Reorder titles here and upload your changes from Settings. Assigned Collections and category queues are preserved.',style:TextStyle(fontSize:12)),
       ])),
       Expanded(child:ids.isEmpty?const Center(child:Text('No direct titles. Add one from your Library.')):
         ReorderableListView.builder(
@@ -624,7 +627,7 @@ class StatisticsPage extends StatelessWidget {
     }
     final ordered=byCategory.entries.toList()..sort((a,b)=>b.value.compareTo(a.value));
     return ListView(padding:const EdgeInsets.all(16),children:[
-      ScreenHeader(label:'Statistics',title:'Your media in numbers',subtitle:'Native insights from the live MediaFlow snapshot',icon:Icons.insights_rounded),
+      ScreenHeader(label:'Statistics',title:'Your media in numbers',subtitle:'Your MediaFlow activity at a glance',icon:Icons.insights_rounded),
       const SizedBox(height:16),
       Text('Library statuses',style:Theme.of(context).textTheme.titleLarge?.copyWith(fontWeight:FontWeight.w700)),
       const SizedBox(height:9),

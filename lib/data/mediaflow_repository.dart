@@ -430,7 +430,7 @@ class MediaFlowRepository extends ChangeNotifier {
       await _savePending();
       await _saveLocalSnapshot();
     } catch (e) {
-      error = 'Native edits not uploaded: $e';
+      error = 'Changes could not be synced: $e';
       rethrow;
     } finally {
       busy = false;
@@ -444,7 +444,7 @@ class MediaFlowRepository extends ChangeNotifier {
     if (_state.isEmpty) throw StateError('No account data to export');
     final root = await getApplicationDocumentsDirectory();
     final date = DateTime.now().toUtc().toIso8601String().substring(0, 10);
-    final file = File('${root.path}${Platform.pathSeparator}MediaFlow_Native_${date}_snapshot.json');
+    final file = File('${root.path}${Platform.pathSeparator}MediaFlow_${date}_snapshot.json');
     await file.writeAsString(const JsonEncoder.withIndent('  ').convert(_state), flush: true);
     return file.path;
   }

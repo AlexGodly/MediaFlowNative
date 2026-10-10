@@ -70,13 +70,13 @@ class _NativeLoggingPageState extends State<NativeLoggingPage> {
       entries.fold<int>(0,(n,e)=>n+(draft['quickMethod']=='amount'?numeric(e['amount']).toInt():
       (numeric(e['last'])-numeric(map[plain(e['id'])]?.progress)).toInt().clamp(0,999999).toInt()));
     return ListView(padding:const EdgeInsets.all(16),children:[
-      ScreenHeader(label:'Native logging studio',title:perUnit?'Precision logging':'Express logging',
+      ScreenHeader(label:'Logging',title:perUnit?'Precision logging':'Express logging',
         subtitle:'Compose drafts locally. Full website-compatible XP commits are still being ported.',
         icon:perUnit?Icons.format_list_numbered_rounded:Icons.bolt_rounded),
       const SizedBox(height:12),
       MfCard(tint:Theme.of(context).colorScheme.tertiaryContainer.withValues(alpha:.24),
         child:Row(children:[const Icon(Icons.shield_outlined,size:21),const SizedBox(width:12),
-          const Expanded(child:Text('SAFE MODE · Unsaved native drafts stay on this device. They are never written into website History or XP until the canonical engine is ported.',
+          const Expanded(child:Text('SAFE MODE · Drafts stay on this device. They are never written into website History or XP until the canonical engine is ported.',
             style:TextStyle(fontSize:12)))])),
       const SizedBox(height:14),
       SegmentedButton<String>(segments:const [
@@ -109,7 +109,7 @@ class _NativeLoggingPageState extends State<NativeLoggingPage> {
       const SizedBox(height:15),
       if(entries.isEmpty)const MfCard(child:Padding(padding:EdgeInsets.all(12),
         child:Column(children:[Icon(Icons.auto_stories_outlined,size:38),SizedBox(height:8),
-          Text('Your native draft is empty.'),SizedBox(height:5),Text('Add a title from your synced Library to begin.')])))
+          Text('Your draft is empty.'),SizedBox(height:5),Text('Add a title from your synced Library to begin.')])))
       else ...entries.map((entry){
         final id=plain(entry['id']);final title=map[id];
         if(title==null)return const SizedBox.shrink();
@@ -166,7 +166,7 @@ class _NativeLoggingPageState extends State<NativeLoggingPage> {
       }),
       const SizedBox(height:8),
       const MfCard(child:Row(children:[Icon(Icons.info_outline,size:20),SizedBox(width:10),
-        Expanded(child:Text('Native draft saving is local-only in this milestone. Record official sessions in your MediaFlow website to keep XP, progress and History synchronized.'))])),
+        Expanded(child:Text('Drafts stay on this device. To record a session and update XP, progress and History, use MediaFlow in your browser for now.'))])),
       const SizedBox(height:25),
     ]);
   }

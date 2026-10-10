@@ -205,7 +205,7 @@ class AccountPage extends StatelessWidget {
     final settings=repo.workspace.settings;
     return ListView(padding:const EdgeInsets.all(16),children:[
       ScreenHeader(label:'Account & settings',title:'Your workspace',
-        subtitle:'Native preferences and the existing MediaFlow cloud',icon:Icons.tune_rounded),
+        subtitle:'Personalize your MediaFlow experience',icon:Icons.tune_rounded),
       const SizedBox(height:13),
       MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         Text(user?.email??'Account',style:Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight:FontWeight.bold)),
@@ -221,7 +221,7 @@ class AccountPage extends StatelessWidget {
       const SizedBox(height:12),
       MfAmbientCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
         MfSectionHeading(title:'Appearance studio',icon:Icons.palette_outlined,
-          detail:'Native palettes drawn from actual MediaFlow v372 themes'),
+          detail:'Colors inspired by your MediaFlow themes'),
         const SizedBox(height:14),
         Row(children:[
           Expanded(child:Text('Current theme: ${selectedTheme.replaceAll('-', ' ')}',
@@ -241,11 +241,11 @@ class AccountPage extends StatelessWidget {
       MfCard(child:Column(children:[
         SwitchListTile.adaptive(contentPadding:EdgeInsets.zero,
           secondary:const Icon(Icons.dark_mode_outlined),title:const Text('Dark appearance'),
-          subtitle:const Text('Native preview; follows the account theme on startup.'),
+          subtitle:const Text('Follows your account theme on startup.'),
           value:dark,onChanged:changeAppearance),
         const Divider(),
         ListTile(contentPadding:EdgeInsets.zero,leading:const Icon(Icons.palette_outlined),
-          title:const Text('Website theme'),subtitle:Text('${settings['theme']??'dark'} · Native palette adapts to supported accents')),
+          title:const Text('Website theme'),subtitle:Text('${settings['theme']??'dark'} · Your selected color palette')),
       ])),
       const SizedBox(height:12),
       MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.stretch,children:[
@@ -286,17 +286,17 @@ class AccountPage extends StatelessWidget {
         const SizedBox(height:8),
         FilledButton.icon(onPressed:repo.pendingCount==0||repo.busy?null:()async{
           final allowed=await showDialog<bool>(context:context,builder:(ctx)=>AlertDialog(
-            title:const Text('Upload native edits?'),
+            title:const Text('Sync saved edits?'),
             content:Text('Upload ${repo.pendingCount} staged metadata, Collection, or Personal Order edits. MediaFlow will refetch the complete existing snapshot, preserve unrelated fields, and reject a concurrent cloud change.'),
             actions:[TextButton(onPressed:()=>Navigator.pop(ctx,false),child:const Text('Cancel')),
               FilledButton(onPressed:()=>Navigator.pop(ctx,true),child:const Text('Upload edits'))]));
           if(allowed!=true)return;
           try{
             await repo.uploadPendingMetadata();
-            if(context.mounted)showMessage(context,'Metadata safely uploaded to your existing MediaFlow cloud.');
+            if(context.mounted)showMessage(context,'Saved changes synced to your MediaFlow account.');
           }catch(e){if(context.mounted)showMessage(context,'Upload blocked: $e');}
         },icon:const Icon(Icons.cloud_upload_outlined),
-          label:Text('Upload ${repo.pendingCount} native edits')),
+          label:Text('Sync ${repo.pendingCount} saved edits')),
         const SizedBox(height:8),
         OutlinedButton.icon(onPressed:()async{
           try{
@@ -307,17 +307,17 @@ class AccountPage extends StatelessWidget {
           }catch(e){if(context.mounted)showMessage(context,'Export failed: $e');}
         },icon:const Icon(Icons.file_download_outlined),label:const Text('Export local snapshot JSON')),
         const SizedBox(height:7),
-        const Text('Other MediaFlow backup, sync, import and restore workflows remain available on your website until their native ports are validated.',
+        const Text('For full backup restoration, imports, and advanced cloud transfers, continue using MediaFlow on the web until these tools are available here.',
           style:TextStyle(fontSize:12)),
       ])),
       const SizedBox(height:12),
       MfCard(child:Column(crossAxisAlignment:CrossAxisAlignment.start,children:[
-        const Text('Native parity audit',style:TextStyle(fontWeight:FontWeight.bold)),
+        const Text('Availability of tools',style:TextStyle(fontWeight:FontWeight.bold)),
         const SizedBox(height:8),
-        const Text('The native app is still under development. Logging/XP commits, advanced queues, missions, importers, full website settings handlers, and lossless native backup restoration remain unported. This screen provides genuine theme previews rather than replacing website Settings.',
+        const Text('Some account features are still available only in MediaFlow on the web. Your Library and existing cloud data remain accessible here.',
           style:TextStyle(fontSize:13)),
         const SizedBox(height:10),
-        const Text('Your MediaFlow website remains fully usable and is not replaced by this app.',
+        const Text('Your account stays available across MediaFlow devices.',
           style:TextStyle(fontWeight:FontWeight.w600)),
       ])),
       const SizedBox(height:15),

@@ -27,7 +27,7 @@ class _SettingsSnapshotExplorerState extends State<SettingsSnapshotExplorer> {
         icon:Icons.tune_rounded),
       const SizedBox(height:12),
       const MfCard(child:Row(children:[Icon(Icons.lock_outline),SizedBox(width:10),
-        Expanded(child:Text('These website settings are shown read-only until their native behavior and persistence are verified. An inspector is not a replacement for a working settings control.',style:TextStyle(fontSize:12)))])),
+        Expanded(child:Text('These account settings are shown for reference. Editing is available only for supported options.',style:TextStyle(fontSize:12)))])),
       const SizedBox(height:13),
       TextField(controller:query,onChanged:(_)=>setState((){}),
         decoration:InputDecoration(prefixIcon:const Icon(Icons.search),
@@ -90,7 +90,7 @@ class _SettingsValue extends StatelessWidget {
     }
     if(value is List){
       final list=value as List;
-      if(list.length>16)return SelectableText('$label: ${list.length} stored entries (preview omitted)',
+      if(list.length>16)return SelectableText('$label: ${list.length} stored entries (details hidden)',
         style:const TextStyle(fontSize:12));
       return Padding(padding:const EdgeInsets.only(top:3),child:Column(
         crossAxisAlignment:CrossAxisAlignment.start,children:[
