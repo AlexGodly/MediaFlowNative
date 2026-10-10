@@ -58,7 +58,7 @@ class _MediaFlowNativeAppState extends State<MediaFlowNativeApp> {
       final dark=appearanceOverride??!selectedTheme.toLowerCase().contains('light');
       final color=mediaAccent(selectedTheme,settings);
       return MaterialApp(
-        title:'MediaFlow Native',debugShowCheckedModeBanner:false,
+        title:'MediaFlow by Alex Godly',debugShowCheckedModeBanner:false,
         theme:nativeTheme(dark:dark,accent:color),
         home:loading?Scaffold(body:Center(child:Column(mainAxisSize:MainAxisSize.min,children:[
           Image.asset('assets/mediaflow.png',width:64,height:64),

@@ -4,6 +4,8 @@ if (-not (Get-Command flutter -ErrorAction SilentlyContinue)) {
 }
 flutter create --platforms=windows,android --org com.alexgodly --project-name mediaflow_native .
 if ($LASTEXITCODE -ne 0) { throw 'flutter create failed' }
+python scripts/brand_platforms.py
+if ($LASTEXITCODE -ne 0) { throw "Native branding failed" }
 flutter pub get
 if ($LASTEXITCODE -ne 0) { throw 'flutter pub get failed' }
 dart run flutter_launcher_icons -f flutter_launcher_icons_windows.yaml

@@ -90,3 +90,10 @@ See `docs/FEATURE_PARITY.md` for the exact implemented/incomplete matrix.
 ## Native v2 additions
 
 Native Collections CRUD (including member editing and ordering), guarded cloud upload and History search/filters/per-unit inspection. **Native v2 is not full v372 parity yet; official consumption/XP commits remain on the website.** Read `docs/FEATURE_PARITY.md`.
+
+### Native application identity
+
+- Windows user-facing product and file name: **MediaFlow by Alex Godly** (`MediaFlow by Alex Godly.exe`).
+- Android application ID: **`com.alexgodly.mediaflow`**; launcher label: **MediaFlow**.
+- Run `python scripts/brand_platforms.py` after `flutter create` and before building. It updates platform host code and must be repeated if host folders are regenerated.
+- Important: Android builds previously distributed as `com.alexgodly.mediaflow_native` are a **different application**; the newly named app can coexist with the old app, with separate local storage. Your existing Supabase account remains the same. Back up unsynced local changes before deleting the old app.

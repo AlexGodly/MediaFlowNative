@@ -25,6 +25,8 @@ jobs:
           cache: true
       - name: Generate real native platform projects
         run: flutter create --platforms=android --org com.alexgodly --project-name mediaflow_native .
+      - name: Apply Android application ID and app label
+        run: python scripts/brand_platforms.py
       - name: Install dependencies and format
         run: |
           flutter pub get
@@ -53,12 +55,18 @@ jobs:
       - name: Generate Windows native project
         shell: pwsh
         run: flutter create --platforms=windows --org com.alexgodly --project-name mediaflow_native .
+      - name: Apply Windows executable and window branding
+        shell: pwsh
+        run: python scripts/brand_platforms.py
       - name: Install dependencies
         run: flutter pub get
       - name: Generate MediaFlow Windows icon
         run: dart run flutter_launcher_icons -f flutter_launcher_icons_windows.yaml
       - name: Build Windows desktop app
         run: flutter build windows --release
+      - name: Rename Windows executable
+        shell: pwsh
+        run: Rename-Item "build/windows/x64/runner/Release/MediaFlow.exe" "MediaFlow by Alex Godly.exe"
       - uses: actions/upload-artifact@v4
         with:
           name: MediaFlow-Native-Windows

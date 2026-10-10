@@ -9,6 +9,7 @@ if [[ "$(uname -s)" == "Darwin" ]]; then
 else
   flutter create --platforms=android --org com.alexgodly --project-name mediaflow_native .
 fi
+python3 scripts/brand_platforms.py
 flutter pub get
 if [[ "$(uname -s)" == "Darwin" ]]; then
   dart run flutter_launcher_icons -f flutter_launcher_icons_ios.yaml
