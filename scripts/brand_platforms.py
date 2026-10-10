@@ -70,6 +70,8 @@ def windows() -> None:
     cmake_text, updated = re.subn(r'set\(BINARY_NAME\s+"[^"]+"\)', 'set(BINARY_NAME "MediaFlow")', cmake_text, count=1)
     if updated != 1:
         raise RuntimeError('Cannot locate Flutter Windows BINARY_NAME')
+    if '_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS' not in cmake_text:
+        cmake_text = 'add_compile_definitions(_SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)\n' + cmake_text
     cmake.write_text(cmake_text, encoding='utf-8')
 
     runner_cpp = ROOT / 'windows/runner/main.cpp'
