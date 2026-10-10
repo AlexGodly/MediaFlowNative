@@ -1,0 +1,88 @@
+name: Build MediaFlow Native (Android, iOS, Windows)
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, develop, native-v1]
+    paths:
+      - 'lib/**'
+      - 'assets/**'
+      - 'pubspec.yaml'
+      - 'test/**'
+      - '.github/workflows/build-native.yml'
+
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate real native platform projects
+        run: flutter create --platforms=android --org com.alexgodly --project-name mediaflow_native .
+      - name: Install dependencies and format
+        run: |
+          flutter pub get
+          dart format lib test
+          dart run flutter_launcher_icons -f flutter_launcher_icons_android.yaml
+      - name: Analyze native Dart source
+        run: flutter analyze --no-fatal-infos
+      - name: Run Flutter tests
+        run: flutter test
+      - name: Build Android APK
+        run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaFlow-Native-Android-APK
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate Windows native project
+        shell: pwsh
+        run: flutter create --platforms=windows --org com.alexgodly --project-name mediaflow_native .
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Generate MediaFlow Windows icon
+        run: dart run flutter_launcher_icons -f flutter_launcher_icons_windows.yaml
+      - name: Build Windows desktop app
+        run: flutter build windows --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaFlow-Native-Windows
+          path: build/windows/x64/runner/Release/**
+          if-no-files-found: error
+
+  ios:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - name: Generate iOS native project
+        run: flutter create --platforms=ios --org com.alexgodly --project-name mediaflow_native .
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Generate MediaFlow iOS icons
+        run: dart run flutter_launcher_icons -f flutter_launcher_icons_ios.yaml
+      - name: Build iOS (unsigned validation artifact)
+        run: flutter build ios --release --no-codesign
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaFlow-Native-iOS-Unsigned-Runner
+          path: build/ios/iphoneos/Runner.app/**
+          if-no-files-found: error

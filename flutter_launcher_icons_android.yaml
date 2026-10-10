@@ -1,0 +1,6 @@
+flutter_launcher_icons:
+  android: true
+  ios: false
+  image_path: assets/mediaflow.png
+  adaptive_icon_background: "#0C0F17"
+  adaptive_icon_foreground: assets/mediaflow.png
