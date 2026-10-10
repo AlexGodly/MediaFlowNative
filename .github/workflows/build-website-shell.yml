@@ -1,0 +1,62 @@
+name: Build MediaFlow Website Apps
+on:
+  workflow_dispatch:
+  push:
+    branches: [website-parity-shell]
+    paths:
+      - 'lib/**'
+      - 'pubspec.yaml'
+      - 'test/**'
+      - '.github/workflows/build-website-shell.yml'
+      - 'scripts/brand_platforms.py'
+jobs:
+  android:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - run: flutter create --platforms=android --org com.alexgodly --project-name mediaflow_native .
+      - run: python scripts/brand_platforms.py
+      - run: flutter pub get
+      - run: dart format --output=write lib/main.dart lib/shell_config.dart lib/web_export_bridge.dart test/shell_config_test.dart
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - run: dart run flutter_launcher_icons -f flutter_launcher_icons_android.yaml
+      - run: flutter build apk --release
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaFlow-Android-Website-App
+          path: build/app/outputs/flutter-apk/app-release.apk
+          if-no-files-found: error
+  windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+      - shell: pwsh
+        run: |
+          if (-not (Get-Command nuget -ErrorAction SilentlyContinue)) { choco install nuget.commandline -y --no-progress }
+      - run: flutter create --platforms=windows --org com.alexgodly --project-name mediaflow_native .
+      - run: python scripts/brand_platforms.py
+      - run: flutter pub get
+      - run: flutter analyze --no-fatal-infos
+      - run: flutter test
+      - run: dart run flutter_launcher_icons -f flutter_launcher_icons_windows.yaml
+      - run: flutter build windows --release
+      - shell: pwsh
+        run: Rename-Item 'build/windows/x64/runner/Release/MediaFlow.exe' 'MediaFlow by Alex Godly.exe'
+      - uses: actions/upload-artifact@v4
+        with:
+          name: MediaFlow-Windows-Website-App
+          path: build/windows/x64/runner/Release/**
+          if-no-files-found: error
